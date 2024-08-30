@@ -10,7 +10,7 @@
 
 ### TODO
 - ~~load rom-based bin to board to verify~~
-- redirect build output to single directory
+- ~~redirect build output to single directory~~
 - add rules to Makefile for ram-based bin
 - load ram-based bin to board to verify
 - verify if nxp drivers work

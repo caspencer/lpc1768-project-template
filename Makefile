@@ -10,41 +10,51 @@ AS = arm-none-eabi-as
 OBJCOPY = arm-none-eabi-objcopy
 SIZE = arm-none-eabi-size
 
+BUILD_DIR = build
+
+INCLUDES = $(shell find . -type d -iname include)
+
 CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
-		 -Iinclude \
-		 -ICMSIS/Core/Include \
-		 -I$(CMSIS_DEVICE_DIR)/Include \
+		 $(addprefix -I,$(INCLUDES)) \
 		 -D__RAM_MODE__=0
 
 ASFLAGS = -mcpu=cortex-m3 -mthumb --defsym RAM_MODE=0
 
 LDFLAGS = -T linker/ldscript_rom_gnu.ld -nostartfiles
 
-SOURCES = $(wildcard src/*.c) \
-		  $(wildcard $(CMSIS_DEVICE_DIR)/Source/*.c)
+SOURCES = $(shell find src -name '*.c') \
+		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s')
 
-OBJECTS = $(SOURCES:.c=.o) $(CMSIS_DEVICE_DIR)/Source/startup_$(CMSIS_DEVICE).o
+OBJECTS = $(patsubst %.s, $(BUILD_DIR)/obj/%.o, $(patsubst %.c, $(BUILD_DIR)/obj/%.o, $(SOURCES)))
 
-all: $(TARGET).bin $(TARGET).hex
+all: $(BUILD_DIR)/bin/$(TARGET).bin $(BUILD_DIR)/bin/$(TARGET).hex
 
-$(CMSIS_DEVICE_DIR)/Source/startup_$(CMSIS_DEVICE).o: $(CMSIS_DEVICE_DIR)/Source/startup_$(CMSIS_DEVICE).s
+$(BUILD_DIR)/obj/%.o: %.s
+	mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -o $@ $<
 
-$(TARGET).elf: $(OBJECTS)
+$(BUILD_DIR)/obj/%.o: %.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/bin/$(TARGET).elf: $(OBJECTS)
+	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS)
 	$(SIZE) $@
 
-$(TARGET).bin: $(TARGET).elf
+$(BUILD_DIR)/bin/$(TARGET).bin: $(BUILD_DIR)/bin/$(TARGET).elf
 	$(OBJCOPY) -O binary $< $@
 
-$(TARGET).hex: $(TARGET).elf
+$(BUILD_DIR)/bin/$(TARGET).hex: $(BUILD_DIR)/bin/$(TARGET).elf
 	$(OBJCOPY) -O ihex $< $@
 
 erase:
 	scripts/flash_erase.sh $(TARGET_DEVICE)
 
-flash: $(TARGET).hex
-	scripts/flash_load.sh $(TARGET_DEVICE) $(TARGET).hex
+flash: $(BUILD_DIR)/bin/$(TARGET).hex
+	scripts/flash_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET).hex
 
 clean:
-	rm -f $(OBJECTS) $(TARGET).elf $(TARGET).bin $(TARGET).hex
+	@rm -rf $(BUILD_DIR)
+
+.PHONY: all clean erase
