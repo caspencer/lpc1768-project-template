@@ -11,50 +11,77 @@ OBJCOPY = arm-none-eabi-objcopy
 SIZE = arm-none-eabi-size
 
 BUILD_DIR = build
+OBJ_DIR = build/obj
 
 INCLUDES = $(shell find . -type d -iname include)
 
 CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
-		 $(addprefix -I,$(INCLUDES)) \
-		 -D__RAM_MODE__=0
+		 $(addprefix -I,$(INCLUDES))
 
-ASFLAGS = -mcpu=cortex-m3 -mthumb --defsym RAM_MODE=0
+ASFLAGS = -mcpu=cortex-m3 -mthumb
 
-LDFLAGS = -T linker/ldscript_rom_gnu.ld -nostartfiles
+LDFLAGS = -nostartfiles
 
 SOURCES = $(shell find src -name '*.c') \
 		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s')
 
-OBJECTS = $(patsubst %.s, $(BUILD_DIR)/obj/%.o, $(patsubst %.c, $(BUILD_DIR)/obj/%.o, $(SOURCES)))
+ROM_OBJECTS = $(patsubst %.s, $(OBJ_DIR)/rom/%.o, $(patsubst %.c, $(OBJ_DIR)/rom/%.o, $(SOURCES)))
+RAM_OBJECTS = $(patsubst %.s, $(OBJ_DIR)/ram/%.o, $(patsubst %.c, $(OBJ_DIR)/ram/%.o, $(SOURCES)))
 
-all: $(BUILD_DIR)/bin/$(TARGET).bin $(BUILD_DIR)/bin/$(TARGET).hex
+all: rom ram
 
-$(BUILD_DIR)/obj/%.o: %.s
+rom: CFLAGS += -D__RAM_MODE__=0
+rom: ASFLAGS += --defsym RAM_MODE=0
+rom: LDFLAGS += -T linker/ldscript_rom_gnu.ld
+rom: $(BUILD_DIR)/bin/$(TARGET)_rom.bin $(BUILD_DIR)/bin/$(TARGET)_rom.hex
+
+%_rom.elf: $(ROM_OBJECTS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(ROM_OBJECTS) -o $@ $(LDFLAGS)
+	$(SIZE) $@
+
+$(OBJ_DIR)/rom/%.o: %.s
 	mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -o $@ $<
 
-$(BUILD_DIR)/obj/%.o: %.c
+$(OBJ_DIR)/rom/%.o: %.c
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/bin/$(TARGET).elf: $(OBJECTS)
+ram: CFLAGS += -D__RAM_MODE__=1
+ram: ASFLAGS += --defsym RAM_MODE=1
+ram: LDFLAGS += -T linker/ldscript_ram_gnu.ld
+ram: $(BUILD_DIR)/bin/$(TARGET)_ram.bin $(BUILD_DIR)/bin/$(TARGET)_ram.hex
+
+%_ram.elf: $(RAM_OBJECTS)
 	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(RAM_OBJECTS) -o $@ $(LDFLAGS)
 	$(SIZE) $@
 
-$(BUILD_DIR)/bin/$(TARGET).bin: $(BUILD_DIR)/bin/$(TARGET).elf
+$(OBJ_DIR)/ram/%.o: %.s
+	mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) -o $@ $<
+
+$(OBJ_DIR)/ram/%.o: %.c
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.bin: %.elf
 	$(OBJCOPY) -O binary $< $@
 
-$(BUILD_DIR)/bin/$(TARGET).hex: $(BUILD_DIR)/bin/$(TARGET).elf
+%.hex: %.elf
 	$(OBJCOPY) -O ihex $< $@
 
 erase:
 	scripts/flash_erase.sh $(TARGET_DEVICE)
 
-flash: $(BUILD_DIR)/bin/$(TARGET).hex
-	scripts/flash_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET).hex
+flash: $(BUILD_DIR)/bin/$(TARGET)_rom.hex
+	scripts/flash_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET)_rom.hex
 
 clean:
 	@rm -rf $(BUILD_DIR)
 
-.PHONY: all clean erase
+# prevent make from deleting .elf files
+.PRECIOUS: %_rom.elf %_ram.elf 
+
+.PHONY: all rom ram erase flash clean

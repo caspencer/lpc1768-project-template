@@ -7,11 +7,12 @@
 ### modifications
 - **startup_LPC17xx.s**: `_start` was changed to `main` (when ROM_MODE = 0)
 - **lpc17xx_nvic.c**: change `IP` to `IPR` and `SHP` to `SHPR` (see https://arm-software.github.io/CMSIS_6/main/Core/core_revisionHistory.html#core6_changes)
+- **ldscript_ram_gnu.ld**: commented out `GROUP(-lgcc -lc -lcs3 -lcs3unhosted -lcs3micro)`
 
 ### TODO
 - ~~load rom-based bin to board to verify~~
 - ~~redirect build output to single directory~~
-- add rules to Makefile for ram-based bin
+- ~~add rules to Makefile for ram-based bin~~
 - load ram-based bin to board to verify
 - verify if nxp drivers work
 - figure out how to compile/include specifc drivers
