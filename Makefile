@@ -9,6 +9,7 @@ CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
 OBJCOPY = arm-none-eabi-objcopy
 SIZE = arm-none-eabi-size
+GDB = arm-none-eabi-gdb
 
 BUILD_DIR = build
 OBJ_DIR = build/obj
@@ -77,6 +78,9 @@ erase:
 
 flash: $(BUILD_DIR)/bin/$(TARGET)_rom.hex
 	scripts/flash_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET)_rom.hex
+
+ram_load: ram
+	scripts/ram_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET)_ram.elf
 
 clean:
 	@rm -rf $(BUILD_DIR)
