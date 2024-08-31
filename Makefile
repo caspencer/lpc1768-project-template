@@ -17,17 +17,22 @@ OBJ_DIR = build/obj
 INCLUDES = $(shell find . -type d -iname include)
 
 CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
+		 -ffunction-sections \
+		 -fdata-sections \
 		 $(addprefix -I,$(INCLUDES))
 
-ASFLAGS = -mcpu=cortex-m3 -mthumb
+ASFLAGS = -mcpu=cortex-m3 -mthumb -g
 
-LDFLAGS = -nostartfiles
+LDFLAGS = -nostartfiles -Wl,--gc-sections
 
 SOURCES = $(shell find src -name '*.c') \
 		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s')
 
-ROM_OBJECTS = $(patsubst %.s, $(OBJ_DIR)/rom/%.o, $(patsubst %.c, $(OBJ_DIR)/rom/%.o, $(SOURCES)))
-RAM_OBJECTS = $(patsubst %.s, $(OBJ_DIR)/ram/%.o, $(patsubst %.c, $(OBJ_DIR)/ram/%.o, $(SOURCES)))
+OBJECTS = $(SOURCES:.c=.o)
+OBJECTS := $(OBJECTS:.s=.o)
+
+ROM_OBJECTS = $(addprefix $(OBJ_DIR)/rom/, $(OBJECTS))
+RAM_OBJECTS = $(addprefix $(OBJ_DIR)/ram/, $(OBJECTS))
 
 all: rom ram
 
@@ -76,7 +81,7 @@ $(OBJ_DIR)/ram/%.o: %.c
 erase:
 	scripts/flash_erase.sh $(TARGET_DEVICE)
 
-flash: $(BUILD_DIR)/bin/$(TARGET)_rom.hex
+flash: rom
 	scripts/flash_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET)_rom.hex
 
 ram_load: ram
@@ -88,4 +93,4 @@ clean:
 # prevent make from deleting .elf files
 .PRECIOUS: %_rom.elf %_ram.elf 
 
-.PHONY: all rom ram erase flash clean
+.PHONY: all rom ram erase flash ram_load clean
