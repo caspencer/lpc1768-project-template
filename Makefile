@@ -3,7 +3,7 @@ TARGET = lpc1768_project
 CMSIS_MANUFACTURER = NXP
 CMSIS_DEVICE       = LPC17xx
 CMSIS_DEVICE_DIR   = CMSIS/Device/$(CMSIS_MANUFACTURER)/$(CMSIS_DEVICE)
-TARGET_DEVICE 	   = lpc1768
+TARGET_DEVICE 	   = LPC1768
 
 CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
@@ -38,7 +38,7 @@ all: rom ram
 
 rom: CFLAGS += -D__RAM_MODE__=0
 rom: ASFLAGS += --defsym RAM_MODE=0
-rom: LDFLAGS += -T linker/ldscript_rom_gnu.ld
+rom: LDFLAGS += -T linker/$(TARGET_DEVICE)_rom.ld
 rom: $(BUILD_DIR)/bin/$(TARGET)_rom.bin $(BUILD_DIR)/bin/$(TARGET)_rom.hex
 
 %_rom.elf: $(ROM_OBJECTS)
@@ -56,7 +56,7 @@ $(OBJ_DIR)/rom/%.o: %.c
 
 ram: CFLAGS += -D__RAM_MODE__=1
 ram: ASFLAGS += --defsym RAM_MODE=1
-ram: LDFLAGS += -T linker/ldscript_ram_gnu.ld
+ram: LDFLAGS += -T linker/$(TARGET_DEVICE)_ram.ld
 ram: $(BUILD_DIR)/bin/$(TARGET)_ram.bin $(BUILD_DIR)/bin/$(TARGET)_ram.hex
 
 %_ram.elf: $(RAM_OBJECTS)
