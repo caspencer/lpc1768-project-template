@@ -47,7 +47,7 @@ SECTIONS
   .text :
   {
     CREATE_OBJECT_SYMBOLS
-    __cs3_region_start_ram = .;
+/*    __cs3_region_start_ram = .;*/
     *(.cs3.region-head.ram)
 /*    __cs3_region_start_rom = .;*/
 /*    *(.cs3.region-head.rom)*/
@@ -136,8 +136,8 @@ SECTIONS
 
   .data :
   {
-/*   __cs3_region_start_ram = .;
-    *(.cs3.region-head.ram)*/
+    __cs3_region_start_ram = .;
+  /*  *(.cs3.region-head.ram)*/
     _sdata = .;
     KEEP(*(.jcr))
     *(.got.plt) *(.got)

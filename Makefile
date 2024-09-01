@@ -78,14 +78,14 @@ $(OBJ_DIR)/ram/%.o: %.c
 %.hex: %.elf
 	$(OBJCOPY) -O ihex $< $@
 
-erase:
+flash_erase:
 	scripts/flash_erase.sh $(TARGET_DEVICE)
 
-flash: rom
+flash_load: rom
 	scripts/flash_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET)_rom.hex
 
 ram_load: ram
-	scripts/ram_load.sh $(TARGET_DEVICE) $(BUILD_DIR)/bin/$(TARGET)_ram.elf
+	scripts/ram_load.sh $(BUILD_DIR)/bin/$(TARGET)_ram.elf
 
 clean:
 	@rm -rf $(BUILD_DIR)
@@ -93,4 +93,4 @@ clean:
 # prevent make from deleting .elf files
 .PRECIOUS: %_rom.elf %_ram.elf 
 
-.PHONY: all rom ram erase flash ram_load clean
+.PHONY: all rom ram flash_erase flash_load ram_load clean

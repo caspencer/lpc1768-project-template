@@ -1,14 +1,7 @@
 #!/bin/bash
-/opt/linkserver/LinkServer gdbserver $1 &
-
-# Give the gdbserver a moment to start up
-sleep 4
-
-# Start GDB and load the image
-arm-none-eabi-gdb -ex "target remote localhost:3333" \
-                  -ex "monitor reset halt" \
-                  -ex "load" \
-                  -ex "continue" \
-                  -ex "load" \
-                  -ex "continue" \
-                  $2
+openocd -f interface/cmsis-dap.cfg -f target/lpc17xx.cfg \
+    -c "init" \
+    -c "halt" \
+    -c "load_image $1" \
+    -c "resume 0x10000000" \
+    -c "shutdown"

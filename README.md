@@ -7,13 +7,13 @@
 ### modifications
 - **startup_LPC17xx.s**: `_start` was changed to `main` (when ROM_MODE = 0)
 - **lpc17xx_nvic.c**: change `IP` to `IPR` and `SHP` to `SHPR` (see https://arm-software.github.io/CMSIS_6/main/Core/core_revisionHistory.html#core6_changes)
-- **ldscript_ram_gnu.ld**: commented out `GROUP(-lgcc -lc -lcs3 -lcs3unhosted -lcs3micro)`
+- **ldscript_ram_gnu.ld**: commented out `GROUP(-lgcc -lc -lcs3 -lcs3unhosted -lcs3micro)`, moved `__cs3_region_start_ram = .;` to `.data` section to get running from ram working properly
 
 ### TODO
 - ~~load rom-based bin to board to verify~~
 - ~~redirect build output to single directory~~
 - ~~add rules to Makefile for ram-based bin~~
-- load ram-based bin to board to verify
+- ~~load ram-based bin to board to verify~~
 - verify if nxp drivers work
 - figure out how to compile/include specifc drivers
 - figure out "ld: warning: lpc1768_project.elf has a LOAD segment with RWX permissions"
