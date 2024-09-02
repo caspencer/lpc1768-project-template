@@ -26,7 +26,8 @@ ASFLAGS = -mcpu=cortex-m3 -mthumb -g
 LDFLAGS = -nostartfiles -Wl,--gc-sections
 
 SOURCES = $(shell find src -name '*.c') \
-		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s')
+		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s') \
+		  $(shell find CMSIS/Drivers -name *.c)
 
 OBJECTS = $(SOURCES:.c=.o)
 OBJECTS := $(OBJECTS:.s=.o)
