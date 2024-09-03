@@ -16,7 +16,7 @@ OBJ_DIR = build/obj
 
 INCLUDES = $(shell find . -type d -iname include)
 
-# note: -0s doesn't seem to work for ram mode
+# NOTE: -Os and -flto flags work for "flash" mode but not "ram" mode
 CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
 		 -ffunction-sections \
 		 -fdata-sections \
@@ -24,7 +24,7 @@ CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
 
 ASFLAGS = -mcpu=cortex-m3 -mthumb -g
 
-LDFLAGS = -fno-builtin --specs=nano.specs -Wl,--gc-sections
+LDFLAGS = -fno-builtin --specs=nano.specs --specs=nosys.specs -Wl,--gc-sections
 
 SOURCES = $(shell find src -name '*.c') \
 		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s') \
