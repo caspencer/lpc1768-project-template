@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug RAM",
+            "cwd": "${workspaceFolder}",
+            "executable": "build/bin/lpc1768_project_ram.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "scripts/openocd.cfg"
+            ],
+            "preLaunchTask": "build",
+            "runToEntryPoint": false,
+            "svdFile": "scripts/LPC176x5x.svd",
+            "showDevDebugOutput": true,
+            "loadFiles": [
+                "build/bin/lpc1768_project_ram.elf"
+            ],
+            "overrideLaunchCommands": [
+                "-interpreter-exec console \"monitor reset halt\"",
+                "-target-download",
+               // "-interpreter-exec console \"monitor reset halt\"",
+                "-enable-pretty-printing",
+            ],
+        },
+        {
+            "name": "Debug FLASH",
+            "cwd": "${workspaceFolder}",
+            "executable": "build/bin/lpc1768_project_rom.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "scripts/openocd.cfg"
+            ],
+            "preLaunchTask": "build",
+            "runToEntryPoint": false,
+            "svdFile": "scripts/LPC176x5x.svd",
+            "showDevDebugOutput": true
+        }
+    ]
+}
