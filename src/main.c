@@ -12,7 +12,6 @@ int main(void) {
     while (1) {
         GPIO_SetValue(2, _BIT(0));
         //LPC_GPIO2->FIOSET = (1 << 0);  // Turn on LED
-        
         delay((1 << 22));
         
         GPIO_ClearValue(2, _BIT(0));

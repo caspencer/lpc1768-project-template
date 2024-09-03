@@ -16,6 +16,7 @@ OBJ_DIR = build/obj
 
 INCLUDES = $(shell find . -type d -iname include)
 
+# note: -0s doesn't seem to work for ram mode
 CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
 		 -ffunction-sections \
 		 -fdata-sections \
@@ -23,7 +24,7 @@ CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
 
 ASFLAGS = -mcpu=cortex-m3 -mthumb -g
 
-LDFLAGS = -nostartfiles -Wl,--gc-sections
+LDFLAGS = -fno-builtin --specs=nano.specs -Wl,--gc-sections
 
 SOURCES = $(shell find src -name '*.c') \
 		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s') \
@@ -39,7 +40,7 @@ all: rom ram
 
 rom: CFLAGS += -D__RAM_MODE__=0
 rom: ASFLAGS += --defsym RAM_MODE=0
-rom: LDFLAGS += -T linker/$(TARGET_DEVICE)_rom.ld
+rom: LDFLAGS += -T linker/$(TARGET_DEVICE)_rom.ld -Wl,-Map=$(BUILD_DIR)/bin/$(TARGET)_rom.map
 rom: $(BUILD_DIR)/bin/$(TARGET)_rom.bin $(BUILD_DIR)/bin/$(TARGET)_rom.hex
 
 %_rom.elf: $(ROM_OBJECTS)
@@ -57,7 +58,7 @@ $(OBJ_DIR)/rom/%.o: %.c
 
 ram: CFLAGS += -D__RAM_MODE__=1
 ram: ASFLAGS += --defsym RAM_MODE=1
-ram: LDFLAGS += -T linker/$(TARGET_DEVICE)_ram.ld
+ram: LDFLAGS += -T linker/$(TARGET_DEVICE)_ram.ld -Wl,-Map=$(BUILD_DIR)/bin/$(TARGET)_ram.map
 ram: $(BUILD_DIR)/bin/$(TARGET)_ram.bin $(BUILD_DIR)/bin/$(TARGET)_ram.hex
 
 %_ram.elf: $(RAM_OBJECTS)
