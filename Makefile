@@ -16,11 +16,13 @@ OBJ_DIR = build/obj
 
 INCLUDES = $(shell find . -type d -iname include)
 
-# NOTE: -Os and -flto flags work for "flash" mode but not "ram" mode
-CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -O2 \
+CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -Os \
+		 -flto \
 		 -ffunction-sections \
 		 -fdata-sections \
 		 $(addprefix -I,$(INCLUDES))
+
+CFLAGS += -DUSE_GPIO_DRIVER
 
 ASFLAGS = -mcpu=cortex-m3 -mthumb -g
 
