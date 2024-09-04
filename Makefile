@@ -8,6 +8,7 @@ TARGET_DEVICE 	   = LPC1768
 CC = arm-none-eabi-gcc
 AS = arm-none-eabi-as
 OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
 SIZE = arm-none-eabi-size
 GDB = arm-none-eabi-gdb
 
@@ -20,13 +21,15 @@ CFLAGS = -mcpu=cortex-m3 -mthumb -Wall -g -Os \
 		 -flto \
 		 -ffunction-sections \
 		 -fdata-sections \
-		 $(addprefix -I,$(INCLUDES))
+		 $(addprefix -I,$(INCLUDES)) 
 
 CFLAGS += -DUSE_GPIO_DRIVER
 
 ASFLAGS = -mcpu=cortex-m3 -mthumb -g
 
 LDFLAGS = -fno-builtin --specs=nano.specs --specs=nosys.specs -Wl,--gc-sections
+
+ODFLAGS = -x --syms
 
 SOURCES = $(shell find src -name '*.c') \
 		  $(shell find $(CMSIS_DEVICE_DIR) -name '*.c' -or -name '*.s') \
@@ -48,6 +51,7 @@ rom: $(BUILD_DIR)/bin/$(TARGET)_rom.bin $(BUILD_DIR)/bin/$(TARGET)_rom.hex
 %_rom.elf: $(ROM_OBJECTS)
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(ROM_OBJECTS) -o $@ $(LDFLAGS)
+	$(OBJDUMP) $(ODFLAGS) $@ > $(@:.elf=.dump)
 	$(SIZE) $@
 
 $(OBJ_DIR)/rom/%.o: %.s
@@ -66,6 +70,7 @@ ram: $(BUILD_DIR)/bin/$(TARGET)_ram.bin $(BUILD_DIR)/bin/$(TARGET)_ram.hex
 %_ram.elf: $(RAM_OBJECTS)
 	mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(RAM_OBJECTS) -o $@ $(LDFLAGS)
+	$(OBJDUMP) $(ODFLAGS) $@ > $(@:.elf=.dump)
 	$(SIZE) $@
 
 $(OBJ_DIR)/ram/%.o: %.s
