@@ -15,8 +15,8 @@
  * the new terms are clearly indicated on the first page of each file where
  * they apply. */
 
-OUTPUT_FORMAT ("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
-/*ENTRY(_start)*/
+/*OUTPUT_FORMAT ("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")*/
+ENTRY(__cs3_reset)
 SEARCH_DIR(.)
 /*GROUP(-lgcc -lc -lcs3 -lcs3unhosted -lcs3micro)*/
 
