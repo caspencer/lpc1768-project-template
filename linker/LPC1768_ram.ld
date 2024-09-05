@@ -1,212 +1,202 @@
-/* Linker script for Cortex-M3
- *
- * Version:CodeSourcery Sourcery G++ Lite 2007q3-53
- * BugURL:https://support.codesourcery.com/GNUToolchain/
- *
- *  Copyright 2007 CodeSourcery.
- *
- * The authors hereby grant permission to use, copy, modify, distribute,
- * and license this software and its documentation for any purpose, provided
- * that existing copyright notices are retained in all copies and that this
- * notice is included verbatim in any distributions. No written agreement,
- * license, or royalty fee is required for any of the authorized uses.
- * Modifications to this software may be copyrighted by their authors
- * and need not follow the licensing terms described here, provided that
- * the new terms are clearly indicated on the first page of each file where
- * they apply. */
-
-/*OUTPUT_FORMAT ("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")*/
-ENTRY(__cs3_reset)
-SEARCH_DIR(.)
-/*GROUP(-lgcc -lc -lcs3 -lcs3unhosted -lcs3micro)*/
-
+/* Linker script to configure memory regions. 
+ * Need modifying for a specific board. 
+ *   FLASH.ORIGIN: starting address of flash
+ *   FLASH.LENGTH: length of flash
+ *   RAM.ORIGIN: starting address of RAM bank 0
+ *   RAM.LENGTH: length of RAM bank 0
+ */
 MEMORY
 {
-  rom (rx)  : ORIGIN = 0x00000000, LENGTH = 512K
-  ram (rwx) : ORIGIN = 0x10000000, LENGTH =  32K
+  FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 512K
+  RAM  (rwx) : ORIGIN = 0x10000000, LENGTH =  32K
   
-  ram1(rwx) : ORIGIN = 0x2007C000, LENGTH = 16k
-  ram2(rwx) : ORIGIN = 0x20080000, LENGTH = 16k
+  RAM1 (rwx) : ORIGIN = 0x2007C000, LENGTH =  16K
+  RAM2 (rwx) : ORIGIN = 0x20080000, LENGTH =  16K
 }
 
-/* These force the linker to search for particular symbols from
- * the start of the link process and thus ensure the user's
- * overrides are picked up
+/* Linker script to place sections and symbol values. Should be used together
+ * with other linker script that defines memory regions FLASH and RAM.
+ * It references following symbols, which must be defined in code:
+ *   Reset_Handler : Entry of reset handler
+ * 
+ * It defines following symbols, which code can use without definition:
+ *   __exidx_start
+ *   __exidx_end
+ *   __copy_table_start__
+ *   __copy_table_end__
+ *   __zero_table_start__
+ *   __zero_table_end__
+ *   __etext
+ *   __data_start__
+ *   __preinit_array_start
+ *   __preinit_array_end
+ *   __init_array_start
+ *   __init_array_end
+ *   __fini_array_start
+ *   __fini_array_end
+ *   __data_end__
+ *   __bss_start__
+ *   __bss_end__
+ *   __end__
+ *   end
+ *   __HeapLimit
+ *   __StackLimit
+ *   __StackTop
+ *   __stack
  */
-EXTERN(__cs3_reset_cortex_m)
-EXTERN(__cs3_interrupt_vector_cortex_m)
-EXTERN(__cs3_start_c main __cs3_stack __cs3_stack_size __cs3_heap_end)
-
-PROVIDE(__cs3_stack = __cs3_region_start_ram + __cs3_region_size_ram);
-PROVIDE(__cs3_stack_size = __cs3_region_start_ram + __cs3_region_size_ram - _end);
-PROVIDE(__cs3_heap_start = _end);
-PROVIDE(__cs3_heap_end = __cs3_region_start_ram + __cs3_region_size_ram);
+ENTRY(Reset_Handler)
 
 SECTIONS
 {
-  .text :
-  {
-    CREATE_OBJECT_SYMBOLS
-/*    __cs3_region_start_ram = .;*/
-    *(.cs3.region-head.ram)
-/*    __cs3_region_start_rom = .;*/
-/*    *(.cs3.region-head.rom)*/
-    __cs3_interrupt_vector = __cs3_interrupt_vector_cortex_m;
-    *(.cs3.interrupt_vector)
-    /* Make sure we pulled in an interrupt vector.  */
-    ASSERT (. != __cs3_interrupt_vector_cortex_m, "No interrupt vector");
-/*    *(.rom)
-    *(.rom.b)*/
-    *(.ram)  
+	.isr_vector :
+	{
+		KEEP(*(.isr_vector))
+	} > RAM
 
-    __cs3_reset = __cs3_reset_cortex_m;
-    *(.cs3.reset)
-    /* Make sure we pulled in some reset code.  */
-    ASSERT (. != __cs3_reset, "No reset code");
+	.text :
+	{
+		KEEP(*(.reset))
+		*(.text*)
 
-    *(.text .text.* .gnu.linkonce.t.*)
-    *(.plt)
-    *(.gnu.warning)
-    *(.glue_7t) *(.glue_7) *(.vfp11_veneer)
+		KEEP(*(.init))
+		KEEP(*(.fini))
 
-    *(.rodata .rodata.* .gnu.linkonce.r.*)
+		/* .ctors */
+		*crtbegin.o(.ctors)
+		*crtbegin?.o(.ctors)
+		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
+		*(SORT(.ctors.*))
+		*(.ctors)
 
-    *(.ARM.extab* .gnu.linkonce.armextab.*)
-    *(.gcc_except_table)
-    *(.eh_frame_hdr)
-    *(.eh_frame)
+		/* .dtors */
+ 		*crtbegin.o(.dtors)
+ 		*crtbegin?.o(.dtors)
+ 		*(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
+ 		*(SORT(.dtors.*))
+ 		*(.dtors)
 
-    . = ALIGN(4);
-    KEEP(*(.init))
+		*(.rodata*)
 
-    . = ALIGN(4);
-    __preinit_array_start = .;
-    KEEP (*(.preinit_array))
-    __preinit_array_end = .;
+		KEEP(*(.eh_frame*))
+	} > RAM
 
-    . = ALIGN(4);
-    __init_array_start = .;
-    KEEP (*(SORT(.init_array.*)))
-    KEEP (*(.init_array))
-    __init_array_end = .;
+	.ARM.extab : 
+	{
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
+	} > RAM
 
-    . = ALIGN(0x4);
-    KEEP (*crtbegin.o(.ctors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
-    KEEP (*(SORT(.ctors.*)))
-    KEEP (*crtend.o(.ctors))
+	__exidx_start = .;
+	.ARM.exidx :
+	{
+		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
+	} > RAM
+	__exidx_end = .;
 
-    . = ALIGN(4);
-    KEEP(*(.fini))
+	/* To copy multiple ROM to RAM sections,
+	 * uncomment .copy.table section and,
+	 * define __STARTUP_COPY_MULTIPLE in startup_ARMCMx.S */
+	/*
+	.copy.table :
+	{
+		. = ALIGN(4);
+		__copy_table_start__ = .;
+		LONG (__etext)
+		LONG (__data_start__)
+		LONG (__data_end__ - __data_start__)
+		LONG (__etext2)
+		LONG (__data2_start__)
+		LONG (__data2_end__ - __data2_start__)
+		__copy_table_end__ = .;
+	} > FLASH
+	*/
 
-    . = ALIGN(4);
-    __fini_array_start = .;
-    KEEP (*(.fini_array))
-    KEEP (*(SORT(.fini_array.*)))
-    __fini_array_end = .;
+	/* To clear multiple BSS sections,
+	 * uncomment .zero.table section and,
+	 * define __STARTUP_CLEAR_BSS_MULTIPLE in startup_ARMCMx.S */
+	/*
+	.zero.table :
+	{
+		. = ALIGN(4);
+		__zero_table_start__ = .;
+		LONG (__bss_start__)
+		LONG (__bss_end__ - __bss_start__)
+		LONG (__bss2_start__)
+		LONG (__bss2_end__ - __bss2_start__)
+		__zero_table_end__ = .;
+	} > FLASH
+	*/
 
-    KEEP (*crtbegin.o(.dtors))
-    KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
-    KEEP (*(SORT(.dtors.*)))
-    KEEP (*crtend.o(.dtors))
+	/* Location counter can end up 2byte aligned with narrow Thumb code but
+	   __etext is assumed by startup code to be the LMA of a section in RAM
+	   which must be 4byte aligned */
+	__etext = ALIGN (4);
 
-    . = ALIGN(4);
-    __cs3_regions = .;
-    LONG (0)
-    LONG (__cs3_region_init_ram)
-    LONG (__cs3_region_start_ram)
-    LONG (__cs3_region_init_size_ram)
-    LONG (__cs3_region_zero_size_ram)
-  } >ram
+	.data : AT (__etext)
+	{
+		__data_start__ = .;
+		*(vtable)
+		*(.data*)
 
-  /* .ARM.exidx is sorted, so has to go in its own output section.  */
-  __exidx_start = .;
-  .ARM.exidx :
-  {
-    *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-  } >ram
-  __exidx_end = .;
-  .text.align :
-  {
-    . = ALIGN(8);
-    _etext = .;
-  } >ram
-/*  __cs3_region_size_rom = LENGTH(rom);
-  __cs3_region_num = 1;*/
+		. = ALIGN(4);
+		/* preinit data */
+		PROVIDE_HIDDEN (__preinit_array_start = .);
+		KEEP(*(.preinit_array))
+		PROVIDE_HIDDEN (__preinit_array_end = .);
 
-  .data :
-  {
-    __cs3_region_start_ram = .;
-  /*  *(.cs3.region-head.ram)*/
-    _sdata = .;
-    KEEP(*(.jcr))
-    *(.got.plt) *(.got)
-    *(.shdata)
-    *(.data .data.* .gnu.linkonce.d.*)
-    *(.ram.d) 
-    . = ALIGN (8);
-    _edata = .;
-  } >ram /*AT>rom*/
-  .bss (NOLOAD):
-  {
-    . = ALIGN (4);
-    __bss_start__ = .;
-    *(.shbss)
-    *(.bss .bss.* .gnu.linkonce.b.*)
-    *(COMMON)
-	__bss_end__ = .;
-    *(.ram.b)
-    . = ALIGN (4);
-    _end = .;
-    __end = .;
-  } >ram1 
-  .heap (NOLOAD):
-  {
-    *(.heap)
-  } >ram
-  .stack (__cs3_stack - __cs3_stack_size) (NOLOAD):
-  {
-    *(.stack)
-    _estack = .;
-    PROVIDE(estack = .);
-  } >ram
-  __cs3_region_init_ram = LOADADDR (.data); 
-/*  __cs3_region_init_ram = LOADADDR (.text);*/
-/*  __cs3_region_init_size_ram = _edata - __cs3_region_start_ram;*/
-  __cs3_region_init_size_ram = _edata - _sdata;
-  __cs3_region_zero_size_ram = _end - _edata;
-  __cs3_region_size_ram = LENGTH(ram);
-  __cs3_region_num = 1;
+		. = ALIGN(4);
+		/* init data */
+		PROVIDE_HIDDEN (__init_array_start = .);
+		KEEP(*(SORT(.init_array.*)))
+		KEEP(*(.init_array))
+		PROVIDE_HIDDEN (__init_array_end = .);
 
-  .stab 0 (NOLOAD) : { *(.stab) }
-  .stabstr 0 (NOLOAD) : { *(.stabstr) }
-  /* DWARF debug sections.
-   * Symbols in the DWARF debugging sections are relative to the beginning
-   * of the section so we begin them at 0.  */
-  /* DWARF 1 */
-  .debug          0 : { *(.debug) }
-  .line           0 : { *(.line) }
-  /* GNU DWARF 1 extensions */
-  .debug_srcinfo  0 : { *(.debug_srcinfo) }
-  .debug_sfnames  0 : { *(.debug_sfnames) }
-  /* DWARF 1.1 and DWARF 2 */
-  .debug_aranges  0 : { *(.debug_aranges) }
-  .debug_pubnames 0 : { *(.debug_pubnames) }
-  /* DWARF 2 */
-  .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
-  .debug_abbrev   0 : { *(.debug_abbrev) }
-  .debug_line     0 : { *(.debug_line) }
-  .debug_frame    0 : { *(.debug_frame) }
-  .debug_str      0 : { *(.debug_str) }
-  .debug_loc      0 : { *(.debug_loc) }
-  .debug_macinfo  0 : { *(.debug_macinfo) }
-  /* SGI/MIPS DWARF 2 extensions */
-  .debug_weaknames 0 : { *(.debug_weaknames) }
-  .debug_funcnames 0 : { *(.debug_funcnames) }
-  .debug_typenames 0 : { *(.debug_typenames) }
-  .debug_varnames  0 : { *(.debug_varnames) }
 
-  .note.gnu.arm.ident 0 : { KEEP (*(.note.gnu.arm.ident)) }
-  .ARM.attributes 0 : { KEEP (*(.ARM.attributes)) }
-  /DISCARD/ : { *(.note.GNU-stack) }
+		. = ALIGN(4);
+		/* finit data */
+		PROVIDE_HIDDEN (__fini_array_start = .);
+		KEEP(*(SORT(.fini_array.*)))
+		KEEP(*(.fini_array))
+		PROVIDE_HIDDEN (__fini_array_end = .);
+
+		KEEP(*(.jcr*))
+		. = ALIGN(4);
+		/* All data end */
+		__data_end__ = .;
+
+	} > RAM
+
+	.bss :
+	{
+		. = ALIGN(4);
+		__bss_start__ = .;
+		*(.bss*)
+		*(COMMON)
+		. = ALIGN(4);
+		__bss_end__ = .;
+	} > RAM
+	
+	.heap (COPY):
+	{
+		__end__ = .;
+		PROVIDE(end = .);
+		*(.heap*)
+		__HeapLimit = .;
+	} > RAM
+
+	/* .stack_dummy section doesn't contains any symbols. It is only
+	 * used for linker to calculate size of stack sections, and assign
+	 * values to stack symbols later */
+	.stack_dummy (COPY):
+	{
+		*(.stack*)
+	} > RAM
+
+	/* Set stack top to end of RAM, and stack limit move down by
+	 * size of stack_dummy section */
+	__StackTop = ORIGIN(RAM) + LENGTH(RAM);
+	__StackLimit = __StackTop - SIZEOF(.stack_dummy);
+	PROVIDE(__stack = __StackTop);
+	
+	/* Check if data + heap + stack exceeds RAM limit */
+	ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
 }
