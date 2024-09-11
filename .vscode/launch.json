@@ -4,7 +4,7 @@
         {
             "name": "Debug RAM",
             "cwd": "${workspaceFolder}",
-            "executable": "build/bin/lpc1768_project_ram.elf",
+            "executable": "build/bin/${workspaceFolderBasename}_ram.elf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",
@@ -16,7 +16,7 @@
             "svdFile": "scripts/LPC176x5x.svd",
             "showDevDebugOutput": true,
             "loadFiles": [
-                "build/bin/lpc1768_project_ram.elf"
+                "build/bin/${workspaceFolderBasename}_ram.elf"
             ],
             "overrideLaunchCommands": [
                 "-interpreter-exec console \"monitor reset halt\"",
@@ -28,7 +28,7 @@
         {
             "name": "Debug FLASH",
             "cwd": "${workspaceFolder}",
-            "executable": "build/bin/lpc1768_project_rom.elf",
+            "executable": "build/bin/${workspaceFolderBasename}_rom.elf",
             "request": "launch",
             "type": "cortex-debug",
             "servertype": "openocd",

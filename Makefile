@@ -1,4 +1,4 @@
-TARGET = lpc1768_project
+TARGET = $(notdir $(CURDIR))
 
 CMSIS_MANUFACTURER = NXP
 CMSIS_DEVICE       = LPC17xx
